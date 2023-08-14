@@ -7,7 +7,7 @@ class Writer:
     def __init__(self):
         self.service = None
 
-        self.spreadsheet_id = '1ktGcWSqJhn9onn7ig2v2nXKKnguAe6dXO4J415_gw24'
+        self.spreadsheet_id = '1s1iQV4ywYQbHsHOWOjOdQczpDiuBgbC6G4vKSZDpQnw'
         credentials = ServiceAccountCredentials.from_json_keyfile_name('credentials.json',
                                                                        ['https://www.googleapis.com/auth/spreadsheets',
                                                                         'https://www.googleapis.com/auth/drive'])
