@@ -124,6 +124,10 @@ def parsers():
                 transfer.append([1.000])
 
             if fiats[fiat] != "USD":
+                
+                fin_headers = common_headers.copy()
+                fin_headers["Referer"] = "https://www.fin.do/"
+                
                 try:
                     data = {"amount": 1000,
                             "type": "SENDER",
@@ -132,11 +136,12 @@ def parsers():
                                        "country": "GB"},
                             "receiver": {"sourceType": "CARD",
                                          "currency": str(fiats[fiat]),
-                                         "country": str(fiats[fiat])[:2]}
+                                         "country": "GB"},
                             }
                     fin_response = requests.post(
-                        f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=headers, json=data).text
+                        f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=fin_headers, json=data).text
                     fin_response = json.loads(fin_response)
+                    print(fin_response)
                     fin.append([fin_response["payload"]["receiver"]["amountToReceive"] / 1000])
                 except Exception as e:  # Используйте Exception вместо общего исключения
                     print(f"Error for fiat {fiats[fiat]}: {e}")  # Вывести информацию об ошибке
