@@ -14,7 +14,7 @@ import GoogleSheets
 from time import sleep
 
 MAX_RETRIES = 5  # Максимальное количество попыток
-DELAY = 5  # Задержка между попытками (в секундах)
+DELAY = 10  # Задержка между попытками (в секундах)
 REQUEST_INTERVAL = 1  # Интервал между запросами (в секундах)
 
 def parsers():
