@@ -129,7 +129,7 @@ def parsers():
                             "type": "SENDER",
                             "sender": {"sourceType": "CARD",
                                        "currency": "USD",
-                                       "country": "BY"},
+                                       "country": "GB"},
                             "receiver": {"sourceType": "CARD",
                                          "currency": str(fiats[fiat]),
                                          "country": str(fiats[fiat])[:2]}
@@ -138,8 +138,9 @@ def parsers():
                         f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=headers, json=data).text
                     fin_response = json.loads(fin_response)
                     fin.append([fin_response["payload"]["receiver"]["amountToReceive"] / 1000])
-                except:  # NOQA
-                    fin.append(["Нет данных"])
+                except Exception as e:  # Используйте Exception вместо общего исключения
+                    print(f"Error for fiat {fiats[fiat]}: {e}")  # Вывести информацию об ошибке
+                    fin.append(["Нет данных"])  # В любом случае добавьте "Нет данных" при ошибке
             elif fiats[fiat] == "USD":
                 fin.append([1.000])
 
