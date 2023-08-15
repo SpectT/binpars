@@ -153,6 +153,7 @@ def parsers():
                     mastercard_response = requests.get(
                         f"https://www.mastercard.com/settlement/currencyrate/conversion-rate?fxDate=0000-00-00&transCurr=USD&crdhldBillCurr={fiats[fiat]}&bankFee=0&transAmt=1",
                         headers=mastercard_headers).text
+                    print(mastercard_response)
                     mastercard_response = json.loads(mastercard_response)
                     mastercard.append([mastercard_response["data"]["conversionRate"]])
                 except Exception as e:  
