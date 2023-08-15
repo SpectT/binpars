@@ -159,7 +159,7 @@ def parsers():
                     print(f"Error with MasterCard API: {e}")
                     mastercard.append(["Нет данных"])
             elif fiats[fiat] == "USD":
-                mastercard.append([1.000]))
+                mastercard.append([1.000])
 
             if fiats[fiat] != "USD":
                 current_date = date.today()
