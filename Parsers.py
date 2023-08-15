@@ -140,8 +140,8 @@ def parsers():
                             }
                     fin_response = requests.post(
                         f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=fin_headers, json=data).text
-                    fin_response = json.loads(fin_response)
                     print(fin_response)
+                    fin_response = json.loads(fin_response)
                     fin.append([fin_response["payload"]["receiver"]["amountToReceive"] / 1000])
                 except Exception as e:  # Используйте Exception вместо общего исключения
                     print(f"Error for fiat {fiats[fiat]}: {e}")  # Вывести информацию об ошибке
@@ -159,7 +159,7 @@ def parsers():
                     mastercard_response = requests.get(
                         f"https://www.mastercard.com/settlement/currencyrate/conversion-rate?fxDate=0000-00-00&transCurr=USD&crdhldBillCurr={fiats[fiat]}&bankFee=0&transAmt=1",
                         headers=headers).text
-                    print(mastercard_response)
+                    #print(mastercard_response)
                     mastercard_response = json.loads(mastercard_response)
                     mastercard.append([mastercard_response["data"]["conversionRate"]])
                 except Exception as e:  
