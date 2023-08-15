@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 from bs4 import BeautifulSoup
 from Data import headers as common_headers
 
@@ -12,6 +13,9 @@ import GoogleSheets
 
 from time import sleep
 
+MAX_RETRIES = 5  # Максимальное количество попыток
+DELAY = 5  # Задержка между попытками (в секундах)
+REQUEST_INTERVAL = 1  # Интервал между запросами (в секундах)
 
 def parsers():
     fiats_range = []
@@ -127,25 +131,46 @@ def parsers():
                 
                 fin_headers = common_headers.copy()
                 fin_headers["Referer"] = "https://www.fin.do/"
-                
-                try:
-                    data = {"amount": 1000,
+                            
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        data = {
+                            "amount": 1000,
                             "type": "SENDER",
-                            "sender": {"sourceType": "CARD",
-                                       "currency": "USD",
-                                       "country": "GB"},
-                            "receiver": {"sourceType": "CARD",
-                                         "currency": str(fiats[fiat]),
-                                         "country": "GB"},
-                            }
-                    fin_response = requests.post(
-                        f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=fin_headers, json=data).text
-                    print(fin_response)
-                    fin_response = json.loads(fin_response)
-                    fin.append([fin_response["payload"]["receiver"]["amountToReceive"] / 1000])
-                except Exception as e:  # Используйте Exception вместо общего исключения
-                    print(f"Error for fiat {fiats[fiat]}: {e}")  # Вывести информацию об ошибке
-                    fin.append(["Нет данных"])  # В любом случае добавьте "Нет данных" при ошибке
+                            "sender": {"sourceType": "CARD", "currency": "USD", "country": "GB"},
+                            "receiver": {"sourceType": "CARD", "currency": str(fiats[fiat]), "country": "GB"}
+                        }
+                        fin_response = requests.post(f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=fin_headers, json=data)
+                        
+                        # Если статус ответа 429, делаем паузу и пробуем снова
+                        if fin_response.status_code == 429:
+                            print("Too many requests. Retrying...")
+                            time.sleep(DELAY)
+                            continue
+                            
+                        fin_response_json = fin_response.json()  # Преобразование ответа в JSON формат
+                        
+                        # Проверка статуса ответа
+                        if fin_response.status_code == 400 and "currency" in fin_response_json.get("message", "").lower():
+                            raise ValueError(fin_response_json["message"])  # Прокинем ошибку для дальнейшего перехвата в except
+                            
+                        print(fin_response_json)
+                        fin.append([fin_response_json["payload"]["receiver"]["amountToReceive"] / 1000])
+                        break
+                    except ValueError as ve:  # Отдельная обработка для временно отключенных валют
+                        print(f"Currency {fiats[fiat]} is disabled: {ve}")
+                        fin.append(["Валюта отключена"])
+                        break
+                    except json.JSONDecodeError:  # Обработка ошибки декодирования JSON
+                        print(f"Error decoding response for fiat {fiats[fiat]}. Maybe empty response?")
+                        fin.append(["Нет данных"])
+                        break
+                    except Exception as e:  # Используйте Exception для обработки всех других ошибок
+                        print(f"Error for fiat {fiats[fiat]}: {e}")  # Вывести информацию об ошибке
+                        fin.append(["Нет данных"])
+                        break
+                    
+                    time.sleep(REQUEST_INTERVAL)  # Задержка между запросами
             elif fiats[fiat] == "USD":
                 fin.append([1.000])
 
@@ -159,7 +184,7 @@ def parsers():
                     mastercard_response = requests.get(
                         f"https://www.mastercard.com/settlement/currencyrate/conversion-rate?fxDate=0000-00-00&transCurr=USD&crdhldBillCurr={fiats[fiat]}&bankFee=0&transAmt=1",
                         headers=headers).text
-                    #print(mastercard_response)
+                    print(mastercard_response)
                     mastercard_response = json.loads(mastercard_response)
                     mastercard.append([mastercard_response["data"]["conversionRate"]])
                 except Exception as e:  
