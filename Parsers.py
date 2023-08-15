@@ -145,15 +145,21 @@ def parsers():
 
             if fiats[fiat] != "USD":
                 sleep(1)
+                
+                mastercard_headers = common_headers.copy()
+                mastercard_headers["Referer"] = "https://www.mastercard.com/global/en/personal/get-support/convert-currency.html"
+                
                 try:
                     mastercard_response = requests.get(
-                        f"https://www.mastercard.com/settlement/currencyrate/conversion-rate?fxDate=0000-00-00&transCurr=USD&crdhldBillCurr={fiats[fiat]}&bankFee=0&transAmt=1").text
+                        f"https://www.mastercard.com/settlement/currencyrate/conversion-rate?fxDate=0000-00-00&transCurr=USD&crdhldBillCurr={fiats[fiat]}&bankFee=0&transAmt=1",
+                        headers=mastercard_headers).text
                     mastercard_response = json.loads(mastercard_response)
                     mastercard.append([mastercard_response["data"]["conversionRate"]])
-                except:  # NOQA
+                except Exception as e:  
+                    print(f"Error with MasterCard API: {e}")
                     mastercard.append(["Нет данных"])
             elif fiats[fiat] == "USD":
-                mastercard.append([1.000])
+                mastercard.append([1.000]))
 
             if fiats[fiat] != "USD":
                 current_date = date.today()
