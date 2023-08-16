@@ -14,8 +14,9 @@ import GoogleSheets
 from time import sleep
 
 MAX_RETRIES = 5  # Максимальное количество попыток
-DELAY = 10  # Задержка между попытками (в секундах)
-REQUEST_INTERVAL = 3  # Интервал между запросами (в секундах)
+DELAY = 5  # Задержка между попытками (в секундах)
+REQUEST_INTERVAL = 1  # Интервал между запросами (в секундах)
+INITIAL_DELAY = 5  # 5 секунд
 
 def parsers():
     fiats_range = []
@@ -126,13 +127,17 @@ def parsers():
                     transfer.append(["Нет данных"])
             elif fiats[fiat] == "USD":
                 transfer.append([1.000])
-
+            
+            session = requests.Session()
+            
             if fiats[fiat] != "USD":
-                
                 fin_headers = common_headers.copy()
                 fin_headers["Referer"] = "https://www.fin.do/"
-                            
-                for attempt in range(MAX_RETRIES):
+
+                delay = INITIAL_DELAY  # начните с начальной задержки, например, 5 секунд
+
+                for _ in range(MAX_RETRIES):
+                    time.sleep(delay)
                     try:
                         data = {
                             "amount": 1000,
@@ -140,39 +145,43 @@ def parsers():
                             "sender": {"sourceType": "CARD", "currency": "USD", "country": "GB"},
                             "receiver": {"sourceType": "CARD", "currency": str(fiats[fiat]), "country": "GB"}
                         }
-                        fin_response = requests.post(f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=fin_headers, json=data)
-                        
-                        # Если статус ответа 429, делаем паузу и пробуем снова
+                        fin_response = session.post(f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=fin_headers, json=data)
+
                         if fin_response.status_code == 429:
                             print("Too many requests. Retrying...")
-                            time.sleep(DELAY)
+                            delay *= 2  # удвоение задержки
+                            if _ == MAX_RETRIES - 1:  # если это последняя попытка
+                                session.close()  # закройте старую сессию
+                                session = requests.Session()  # и начните новую
                             continue
-                            
-                        fin_response_json = fin_response.json()  # Преобразование ответа в JSON формат
-                        
-                        # Проверка статуса ответа
+
+                        fin_response_json = fin_response.json()
+
                         if fin_response.status_code == 400 and "currency" in fin_response_json.get("message", "").lower():
-                            raise ValueError(fin_response_json["message"])  # Прокинем ошибку для дальнейшего перехвата в except
-                            
+                            raise ValueError(fin_response_json["message"])
+
                         print(fin_response_json)
                         fin.append([fin_response_json["payload"]["receiver"]["amountToReceive"] / 1000])
                         break
-                    except ValueError as ve:  # Отдельная обработка для временно отключенных валют
+                    except ValueError as ve:
                         print(f"Currency {fiats[fiat]} is disabled: {ve}")
                         fin.append(["Валюта отключена"])
                         break
-                    except json.JSONDecodeError:  # Обработка ошибки декодирования JSON
+                    except json.JSONDecodeError:
                         print(f"Error decoding response for fiat {fiats[fiat]}. Maybe empty response?")
                         fin.append(["Нет данных"])
                         break
-                    except Exception as e:  # Используйте Exception для обработки всех других ошибок
-                        print(f"Error for fiat {fiats[fiat]}: {e}")  # Вывести информацию об ошибке
+                    except Exception as e:
+                        print(f"Error for fiat {fiats[fiat]}: {e}")
                         fin.append(["Нет данных"])
                         break
-                    
-                    time.sleep(REQUEST_INTERVAL)  # Задержка между запросами
+                    finally:
+                        delay = INITIAL_DELAY  # сбросить задержку после успешного выполнения
+
             elif fiats[fiat] == "USD":
                 fin.append([1.000])
+
+            session.close()  # Не забудьте закрыть сессию после завершения работы
 
             if fiats[fiat] != "USD":
                 sleep(1)
