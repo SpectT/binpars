@@ -105,7 +105,7 @@ def parsers():
             if fiats[fiat] != "USD":
                 try:
                     revolut_json = json.loads(requests.get(
-                        f'https://www.revolut.com/api/exchange/quote/?amount=1&country=GB&fromCurrency=USD&isRecipientAmount=false&toCurrency={fiats[fiat]}',
+                        f'https://www.revolut.com/api/exchange/quote?amount=1&country=GB&fromCurrency=USD&isRecipientAmount=false&toCurrency={fiats[fiat]}',
                         headers=headers).text)
                     revolut.append([revolut_json["rate"]["rate"]])
                 except:  # NOQA
