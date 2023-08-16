@@ -107,6 +107,7 @@ def parsers():
                     revolut_json = json.loads(requests.get(
                         f'https://www.revolut.com/api/exchange/quote?amount=1&country=GB&fromCurrency=USD&isRecipientAmount=false&toCurrency={fiats[fiat]}',
                         headers=headers).text)
+                    print(revolut_json)
                     revolut.append([revolut_json["rate"]["rate"]])
                 except:  # NOQA
                     revolut.append([""])
