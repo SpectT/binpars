@@ -24,11 +24,6 @@ DELAY = 5  # Задержка между попытками (в секундах
 REQUEST_INTERVAL = 2  # Интервал между запросами (в секундах)
 INITIAL_DELAY = 5  # 5 секунд
 
-def check_for_403_error(response, description):
-    """Проверка на ошибку 403 и логирование информации, если ошибка произошла."""
-    if response.status_code == 403:
-        logger.error(f"Error 403 received for {description}. Response: {response.text}")
-
 def parsers():
     fiats_range = []
     names_range = []
@@ -41,18 +36,14 @@ def parsers():
     visa = []
     mastercard = []
 
-    logger.info("Making request to transfergo.com for GBP course")
-    # Запрос к transfergo.com
-    transfergo_response_obj = requests.get(
-        "https://my.transfergo.com/api/transfers/quote?&calculationBase=sendAmount&amount=1000.00&fromCountryCode=GB&toCountryCode=US&fromCurrencyCode=GBP&toCurrencyCode=USD")
-    check_for_403_error(transfergo_response_obj, "transfergo.com for GBP course")
-    gbp_course = transfergo_response_obj.text
+    gbp_course = requests.get(
+        "https://my.transfergo.com/api/transfers/quote?&calculationBase=sendAmount&amount=1000.00&fromCountryCode=GB&toCountryCode=US&fromCurrencyCode=GBP&toCurrencyCode=USD").text
     gbp_course = json.loads(gbp_course)
     gbp_course = gbp_course["deliveryOptions"]["standard"]["paymentOptions"]["card"]["quote"]["receivingAmount"]
 
     for fiat in range(len(fiats)):
         try:
-            print(fiats[fiat])
+            #print(fiats[fiat])
             data = {
                 "asset": "USDT",
                 "countries": [],
@@ -65,8 +56,8 @@ def parsers():
                 "tradeType": "BUY",
             }
 
-            r = requests.post('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', headers=headers, json=data,timeout=(10, 20))
-            check_for_403_error(r, "p2p.binance.com search")
+            r = requests.post('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', headers=headers, json=data,
+                              timeout=(10, 20))
             response = json.loads(r.text)
 
             amount = 0
@@ -95,7 +86,6 @@ def parsers():
             data["filter"][1]["right"] = f"USD{fiats[fiat]}"
 
             response = requests.get("https://open.er-api.com/v6/latest/USD")
-            check_for_403_error(response, "open.er-api.com latest USD")
             response = response.json()
 
             # Проходимся по всем валютам в ответе
@@ -111,8 +101,9 @@ def parsers():
 
             if fiats[fiat] not in ["USD", "VES"]:
                 try:
-                    wise_val = requests.get(f'https://wise.com/ru/currency-converter/usd-to-{fiats[fiat].lower()}-rate?amount=1',headers=headers, timeout=(10, 20))
-                    check_for_403_error(wise_val, f"wise.com currency converter for {fiats[fiat]}")
+                    wise_val = requests.get(
+                        f'https://wise.com/ru/currency-converter/usd-to-{fiats[fiat].lower()}-rate?amount=1',
+                        headers=headers, timeout=(10, 20))
                     soup = BeautifulSoup(wise_val.text, 'lxml')
                     price = soup.find("span", "text-success").text
                     price = price[:price.find('.')] + "," + price[price.find('.') + 1:]
@@ -127,10 +118,9 @@ def parsers():
             if fiats[fiat] != "USD":
                 try:
                     revolut_json = json.loads(requests.get(
-                        f'https://www.revolut.com/api/exchange/quote?amount=1&country=GB&fromCurrency=USD&isRecipientAmount=false&toCurrency={fiats[fiat]}',headers=headers).text)
-                    check_for_403_error(revolut_json, f"revolut.com exchange quote for {fiats[fiat]}")
-
-                    #print(revolut_json)
+                        f'https://www.revolut.com/api/exchange/quote?amount=1&country=GB&fromCurrency=USD&isRecipientAmount=false&toCurrency={fiats[fiat]}',
+                        headers=headers).text)
+                    print(revolut_json)
                     revolut.append([revolut_json["rate"]["rate"]])
                 except:  # NOQA
                     revolut.append([""])
@@ -142,7 +132,6 @@ def parsers():
                     transfer_go = requests.get(
                         f"https://my.transfergo.com/api/transfers/quote?&calculationBase=sendAmount&amount=1000.00&fromCountryCode=GB&toCountryCode={str(fiats[fiat])[:2]}&fromCurrencyCode=GBP&toCurrencyCode={fiats[fiat]}",
                         headers=headers).text
-                    check_for_403_error(transfer_go, f"transfergo.com transfers quote for {fiats[fiat]}")
                     transfer_go = json.loads(transfer_go)
 
                     transfer.append([
@@ -171,7 +160,6 @@ def parsers():
                             "receiver": {"sourceType": "CARD", "currency": str(fiats[fiat]), "country": "GB"}
                         }
                         fin_response = session.post(f'https://api.fin.do/v1/api/fin/AssumeCommission', headers=fin_headers, json=data)
-                        check_for_403_error(fin_response, f"api.fin.do AssumeCommission for {fiats[fiat]}")
 
                         if fin_response.status_code == 429:
                             print("Too many requests. Retrying...")
@@ -211,15 +199,15 @@ def parsers():
 
             if fiats[fiat] != "USD":
                 sleep(1)
-                            
+                
+                #mastercard_headers = common_headers.copy()
+                #mastercard_headers["Referer"] = "https://www.mastercard.com/global/en/personal/get-support/convert-currency.html"
+                
                 try:
-                    mastercard_response_obj = requests.get(
+                    mastercard_response = requests.get(
                         f"https://www.mastercard.com/settlement/currencyrate/conversion-rate?fxDate=0000-00-00&transCurr=USD&crdhldBillCurr={fiats[fiat]}&bankFee=0&transAmt=1",
-                        headers=headers)
-                    
-                    check_for_403_error(mastercard_response_obj, f"mastercard.com conversion rate for {fiats[fiat]}")
-                    mastercard_response = mastercard_response_obj.text
-
+                        headers=headers).text
+                    #print(mastercard_response)
                     mastercard_response = json.loads(mastercard_response)
                     mastercard.append([mastercard_response["data"]["conversionRate"]])
                 except Exception as e:  
@@ -243,13 +231,10 @@ def parsers():
                 visa_headers["referer"] = "https://usa.visa.com/"
                 
                 try:
-                    visa_response_obj = requests.get(
+                    visa_response = requests.get(
                         f"https://usa.visa.com/cmsapi/fx/rates?amount=1&fee=0&utcConvertedDate={str_current_date}&exchangedate={str_current_date}&fromCurr={fiats[fiat]}&toCurr=USD", 
-                        headers=visa_headers)
-                    check_for_403_error(visa_response_obj, f"usa.visa.com fx rates for {fiats[fiat]}")
-                    visa_response = visa_response_obj.text
-
-                    
+                        headers=visa_headers).text
+                    visa_response = json.loads(visa_response)
                     tmp = visa_response["convertedAmount"]
                     tmp = tmp.replace(',', '')
                     tmp = tmp.replace('.', ',')
