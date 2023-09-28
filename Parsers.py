@@ -79,12 +79,18 @@ def parsers():
 
             data["filter"][1]["right"] = f"USD{fiats[fiat]}"
 
-            response = requests.post("https://scanner.tradingview.com/forex/scan", json=data)
-            response = json.loads(response.text)
-            try:
-                nbank[fiats.index(response["data"][0]["s"][10:13])] = [response["data"][0]["d"][3]]
-            except:  # NOQA
-                pass
+            url = "https://open.er-api.com/v6/latest/USD" 
+
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                data = response.json()
+                currency_rates = data.get("rates", {})
+                
+                # Создайте словарь, где ключом будет символ валюты, а значением - курс
+                nbank = {}
+                for currency, rate in currency_rates.items():
+                    nbank[currency] = [rate]
 
             if fiats[fiat] not in ["USD", "VES"]:
                 try:
@@ -177,12 +183,12 @@ def parsers():
                         fin.append(["Нет данных"])
                         break
                     finally:
-                        delay = INITIAL_DELAY  # сбросить задержку после успешного выполнения
+                        delay = INITIAL_DELAY
 
             elif fiats[fiat] == "USD":
                 fin.append([1.000])
 
-            session.close()  # Не забудьте закрыть сессию после завершения работы
+            session.close()
 
             if fiats[fiat] != "USD":
                 sleep(1)
@@ -194,7 +200,7 @@ def parsers():
                     mastercard_response = requests.get(
                         f"https://www.mastercard.com/settlement/currencyrate/conversion-rate?fxDate=0000-00-00&transCurr=USD&crdhldBillCurr={fiats[fiat]}&bankFee=0&transAmt=1",
                         headers=headers).text
-                    print(mastercard_response)
+                    #print(mastercard_response)
                     mastercard_response = json.loads(mastercard_response)
                     mastercard.append([mastercard_response["data"]["conversionRate"]])
                 except Exception as e:  
