@@ -43,7 +43,7 @@ def parsers():
 
     for fiat in range(len(fiats)):
         try:
-            print(fiats[fiat])
+            #print(fiats[fiat])
             data = {
                 "asset": "USDT",
                 "countries": [],
