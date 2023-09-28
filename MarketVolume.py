@@ -71,25 +71,25 @@ def collect_v():
             tr_quantity.append(["Нет предложений"])
             continue
 
-        if fiats[fiat] != "USD":
-            try:
-                link = f"https://paysend.com/api/en-lv/send-money/from-the-united-states-of-america-to-{str(namesPaysend[fiats[fiat]])}?fromCurrId=840&toCurrId={str(idsPaysend[namesPaysend[fiats[fiat]]])}&isFrom=true"
+        #if fiats[fiat] != "USD":
+        #    try:
+         #       link = f"https://paysend.com/api/en-lv/send-money/from-the-united-states-of-america-to-{str(namesPaysend[fiats[fiat]])}?fromCurrId=840&toCurrId={str(idsPaysend[namesPaysend[fiats[fiat]]])}&isFrom=true"
+#
+ #               response = requests.post(link, headers=headersPaysend)
+  #              if response.status_code == 500:
+   #                 paysend.append(["Недействительный ответ сервера"])
+    #            print(response)
+     #           response = json.loads(response.text)
+      #          value = [str(response["commission"]["convertRate"]).replace('.', ',')]
+       #         paysend.append(value)
+        #        print(str(fiats[fiat]), 'convert rate', value)
 
-                response = requests.post(link, headers=headersPaysend)
-                if response.status_code == 500:
-                    paysend.append(["Недействительный ответ сервера"])
-                print(response)
-                response = json.loads(response.text)
-                value = [str(response["commission"]["convertRate"]).replace('.', ',')]
-                paysend.append(value)
-                print(str(fiats[fiat]), 'convert rate', value)
-
-                sleep(10)
-            except Exception as ex:  # NOQA
-                paysend.append(["Нет данных"])
-                print(ex)
-        elif fiats[fiat] == "USD":
-            paysend.append([1.000])
+         #       sleep(10)
+          #  except Exception as ex:  # NOQA
+           #     paysend.append(["Нет данных"])
+            #    print(ex)
+        #elif fiats[fiat] == "USD":
+         #   paysend.append([1.000])
 
 
 
