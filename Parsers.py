@@ -13,6 +13,12 @@ import GoogleSheets
 
 from time import sleep
 
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)  # Включите уровень INFO для логирования
+logger = logging.getLogger(__name__)
+
 MAX_RETRIES = 5  # Максимальное количество попыток
 DELAY = 5  # Задержка между попытками (в секундах)
 REQUEST_INTERVAL = 1  # Интервал между запросами (в секундах)
@@ -79,18 +85,20 @@ def parsers():
 
             data["filter"][1]["right"] = f"USD{fiats[fiat]}"
 
-            url = "https://open.er-api.com/v6/latest/USD" 
+            response = requests.get("https://open.er-api.com/v6/latest/USD")
+            response = response.json()
 
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                data = response.json()
-                currency_rates = data.get("rates", {})
-                
-                # Создайте словарь, где ключом будет символ валюты, а значением - курс
-                nbank = {}
-                for currency, rate in currency_rates.items():
-                    nbank[currency] = [rate]
+            # Проходимся по всем валютам в ответе
+            for currency, rate_value in response["rates"].items():
+                try:
+                    # Ищем индекс валюты в списке fiats
+                    index = fiats.index(currency)
+                    # Записываем курс валюты в nbank по найденному индексу
+                    nbank[index] = [rate_value]
+                    #logger.info(f"Found rate for {currency}: {rate_value}")
+                except ValueError:
+                    #logger.error(f"Currency {currency} not found in fiats list.")
+                    pass
 
             if fiats[fiat] not in ["USD", "VES"]:
                 try:
