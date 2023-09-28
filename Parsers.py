@@ -96,8 +96,7 @@ def parsers():
                     # Записываем курс валюты в nbank по найденному индексу
                     nbank[index] = [rate_value]
                     #logger.info(f"Found rate for {currency}: {rate_value}")
-                except ValueError:
-                    #logger.error(f"Currency {currency} not found in fiats list.")
+                except:  # NOQA
                     pass
 
             if fiats[fiat] not in ["USD", "VES"]:
