@@ -85,17 +85,17 @@ def parsers():
 
             data["filter"][1]["right"] = f"USD{fiats[fiat]}"
 
-            response = requests.get("https://open.er-api.com/v6/latest/USD")
-            response = response.json()
+            response = requests.get("https://v6.exchangerate-api.com/v6/441e43b8ecf2a55528fa3ec7/latest/USD")
+            response = json.loads(response.text)
 
             # Проходимся по всем валютам в ответе
-            for currency, rate_value in response["rates"].items():
+            for currency, rate_value in response["conversion_rates"].items():
                 try:
                     # Ищем индекс валюты в списке fiats
                     index = fiats.index(currency)
                     # Записываем курс валюты в nbank по найденному индексу
                     nbank[index] = [rate_value]
-                    #logger.info(f"Found rate for {currency}: {rate_value}")
+                    logger.info(f"Found rate for {currency}: {rate_value}")
                 except:  # NOQA
                     pass
 
